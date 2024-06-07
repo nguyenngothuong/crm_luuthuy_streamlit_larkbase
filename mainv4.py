@@ -8,8 +8,13 @@ import unidecode
 import json
 import requests
 from requests.auth import HTTPBasicAuth
+from login import login
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
 
-
+if not st.session_state.logged_in:
+    if not login():
+        st.stop()
 
 
 # Hàm tạo mã đơn hàng mới
@@ -21,6 +26,8 @@ def generate_order_id():
 
 user = st.secrets["user"]
 password = st.secrets["password"]
+
+
 
 lark_app_id = st.secrets["lark_app_id"]
 lark_app_secret = st.secrets["lark_app_secret"]
