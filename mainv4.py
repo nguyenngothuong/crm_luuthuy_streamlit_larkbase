@@ -31,7 +31,6 @@ if not st.session_state.logged_in:
         else:
             st.error("Sai tài khoản mật khẩu")
 else:
-    st.info("Khâu này kết nối lấy data có thể hơi lâu do thông tin khách hàng nhiều quá, có thể xem xét chỉ lấy khách hàng đã tạo trong 30 ngày qua!")
 
     user = st.secrets["user"]
     password = st.secrets["password"]
@@ -45,7 +44,6 @@ else:
     table_orders_id = st.secrets["table_orders_id"]
     table_product_id = st.secrets["table_product_id"]
     # Tiêu đề app
-    st.title("Ứng dụng quản lý đơn hàng")
     st.info("Khâu này kết nối lấy data có thể hơi lâu do thông tin khách hàng nhiều quá, có thể xem xét chỉ lấy khách hàng đã tạo trong 30 ngày qua!")
     if 'tenant_access_token' not in st.session_state:
         st.session_state.tenant_access_token = None
