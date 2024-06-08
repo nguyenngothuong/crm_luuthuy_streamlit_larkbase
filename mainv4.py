@@ -72,7 +72,7 @@ else:
             data = get_larkbase_table_data(table_id)
             if data is not None:
                 dfs[table_name] = pd.DataFrame(data)
-                save_df_to_json(dfs[table_name], f"{table_name}.json")  # Lưu DataFrame vào file JSON
+                # save_df_to_json(dfs[table_name], f"{table_name}.json")  # Lưu DataFrame vào file JSON
 
             else:
                 st.error(f"Kết nối đến bảng {table_name} thất bại!")
