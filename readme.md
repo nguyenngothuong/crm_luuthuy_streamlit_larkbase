@@ -21,13 +21,13 @@
 1. Clone repository về máy tính của bạn:
 
    ```
-   git clone https://github.com/your-username/order-management-app.git
+   git clone https://github.com/nguyenngothuong/crm_luuthuy_streamlit_larkbase
    ```
 
 2. Di chuyển vào thư mục dự án:
 
    ```
-   cd order-management-app
+   cd crm_luuthuy_streamlit_larkbase
    ```
 
 3. Tạo và kích hoạt môi trường ảo (virtual environment):
