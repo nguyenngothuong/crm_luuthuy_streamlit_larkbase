@@ -59,40 +59,6 @@ def connect_to_larkbase(app_id, app_secret, app_token):
     }
     return client
 
-def get_larkbase_data1(tenant_access_token, client, table_id, view_id=None):
-    app_token = client["app_token"]
-    url = f"https://open.larksuite.com/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records"
-    params = {"page_size": 500}  # Lấy tối đa 500 bản ghi trong một lần gọi API
-    if view_id:
-        params["view_id"] = view_id
-
-    headers = {
-        "Authorization": f"Bearer {tenant_access_token}"
-    }
-
-    data = []
-    page_token = None
-    while True:
-        if page_token:
-            params["page_token"] = page_token
-        response = requests.get(url, headers=headers, params=params)
-        if response.status_code == 200:
-            response_data = response.json()
-            data.extend(response_data["data"]["items"])
-            if response_data["data"]["has_more"]:
-                page_token = response_data["data"]["page_token"]
-            else:
-                break
-        else:
-            print(f"Lỗi: {response.status_code}")
-            return None
-
-    df = pd.DataFrame([record["fields"] for record in data])
-    df.columns = [sanitize_column_name(col) for col in df.columns]  # Đổi tên cột
-    # df.to_csv("demo.csv")
-    # print(df)
-    return df
-
 @st.cache_resource
 def get_list_view(tenant_access_token, app_token, table_id, app_id = None, app_secret = None):
     url = f"https://open.larksuite.com/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/views"
@@ -300,8 +266,9 @@ def create_records(tenant_access_token, app_token, table_id, records, app_id=Non
         return None
     
 #sử dụng  table_id=None để sau kiểm tra nếu ko truyền vào table_id thì sẽ sử dụng url_get_list_all_table để lấy được table_id
+
 @st.cache_data
-def get_larkbase_data(tenant_access_token, app_token, table_id, view_id=None, app_id=None, app_secret=None):
+def get_larkbase_data_cu_roi_nhe(tenant_access_token, app_token, table_id, view_id=None, app_id=None, app_secret=None):
     url = f"https://open.larksuite.com/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records"
     
     params = {"page_size": 500}  # Lấy tối đa 500 bản ghi trong một lần gọi API
@@ -357,6 +324,74 @@ def get_larkbase_data(tenant_access_token, app_token, table_id, view_id=None, ap
 
     return data
 
+'''
+mới update 09062024 -> thêm tính năng filter
+'''
+
+@st.cache_data
+def get_larkbase_data(tenant_access_token, app_token, table_id, view_id=None, filter=None, app_id=None, app_secret=None):
+    url = f"https://open.larksuite.com/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records"
+    
+    params = {"page_size": 500}  # Lấy tối đa 500 bản ghi trong một lần gọi API
+    if view_id:
+        params["view_id"] = view_id
+        
+    headers = {
+        "Authorization": f"Bearer {tenant_access_token}",
+        "Content-Type": "application/json"
+    }
+
+    items = []
+    page_token = None
+
+    while True:
+        if page_token:
+            params["page_token"] = page_token
+        
+        payload = {}
+        if filter:
+            payload = json.dumps(filter)
+        try:
+            if payload:
+                response = requests.post(url + "/search", headers=headers, params=params, data=payload)
+            else:
+                response = requests.get(url, headers=headers, params=params)
+
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                items.extend(response_data["data"]["items"])
+
+                if response_data["data"]["has_more"]:
+                    page_token = response_data["data"]["page_token"]
+                else:
+                    break
+            elif response.status_code == 400:  # Unauthorized - Token hết hạn
+                logging.info("tenant_access_token has expired. Obtaining a new one...")
+
+                if app_id and app_secret:
+                    new_token = refresh_token(app_id, app_secret)
+                    if new_token:
+                        tenant_access_token = new_token
+                        headers["Authorization"] = f"Bearer {tenant_access_token}"
+                    else:
+                        logging.error("Failed to obtain a new tenant_access_token.")
+                        return None
+                else:
+                    logging.error("app_id and app_secret are required to obtain a new tenant_access_token.")
+                    return None
+            elif response.status_code == 403:
+                logging.error(f"Error code: {response}")
+                logging.info("Please check if you have added the bot to the file...")
+                return None
+            else:
+                logging.error(f"Error: {response}")
+                return None
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error calling API: {e}")
+            return None
+
+    return items
 
 @st.cache_data(ttl=600) #hsd trong vòng 2h nhé.
 def get_tenant_access_token(app_id, app_secret):
@@ -472,3 +507,36 @@ def flatten_dict(data):
 
 
 
+
+'''
+test thêm filter cho version 02
+'''
+# tenant_access_token = "t-xxx"
+# app_token = "zzz"
+# table_id = "zxxx"
+
+# filter = {
+#     "filter": {
+#         "conditions": [
+#             {
+#                 "field_name": "Tình trạng",
+#                 "operator": "is",
+#                 "value": [
+#                     "Chốt"
+#                 ]
+#             }
+#         ],
+#         "conjunction": "and"
+#     }
+# }
+
+# data = get_larkbase_data_v2(tenant_access_token, app_token, table_id)
+
+# print("số lượng bản ghi: " + str(len(data)))
+
+# if data:
+#     # Xử lý dữ liệu trả về
+#     for item in data:
+#         print(item)
+# else:
+#     print("Không có dữ liệu hoặc có lỗi xảy ra.")
