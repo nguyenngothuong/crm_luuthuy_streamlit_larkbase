@@ -2,14 +2,14 @@ import streamlit as st
 import pandas as pd
 import uuid
 import json
-from datetime import datetime
+import datetime
 from lark_connector import connect_to_larkbase, get_larkbase_data, get_tenant_access_token, get_list_table, get_list_view, create_a_record, create_records
 import unidecode
 import json
 import requests
 from requests.auth import HTTPBasicAuth
-
-
+import base64
+import os
 
 # Tiêu đề app
 st.title("Ứng dụng quản lý đơn hàng")
@@ -44,7 +44,6 @@ else:
     table_orders_id = st.secrets["table_orders_id"]
     table_product_id = st.secrets["table_product_id"]
     # Tiêu đề app
-    st.info("Khâu này kết nối lấy data có thể hơi lâu do thông tin khách hàng nhiều quá, có thể xem xét chỉ lấy khách hàng đã chốt trong 30 ngày qua!")
     if 'tenant_access_token' not in st.session_state:
         st.session_state.tenant_access_token = None
 
@@ -129,10 +128,10 @@ else:
 
     if customer_option == "Thêm mới":
         # Nhập thông tin khách hàng mới
-        customer_name = st.text_input("Tên khách hàng", "")
-        customer_phone = st.text_input("Số điện thoại", "")
+        customer_name = st.text_input("Tên khách hàng", placeholder= "Nhập tên khách hàng...")
+        customer_phone = st.text_input("Số điện thoại", placeholder="Chỉ nhập dạng số ví dụ 0816226086")
         customer_ad_channel = st.selectbox("Nguồn khách hàng", customer_source_list, index=customer_source_list.index("FB Mới"))
-        customer_notes = st.text_input("Ghi chú thêm...")
+        customer_notes = st.text_area("Ghi chú", placeholder="Nhập ghi chú nếu có (ghi chú về khách hàng)")
         is_new = "yes"
         customer_record_id = ""
         st.info("Thông tin khách hàng sẽ được thêm mới khi bạn lưu đơn hàng!")
@@ -206,12 +205,24 @@ else:
 
     # Chọn sản phẩm và số lượng
     st.header("Thông tin đơn hàng")
+    
+    
 
-    hinh_thuc_don_hang_list = ["Vật tư","Hoàn thiện", "Đơn keo"]
+    col1, col2, col3 = st.columns(3)
 
-    hinh_thuc_don_hang = st.selectbox("Hình thức đơn hàng", hinh_thuc_don_hang_list, index=hinh_thuc_don_hang_list.index("Vật tư"))
+    with col1:
+        hinh_thuc_don_hang_list = ["Vật tư", "Hoàn thiện", "Đơn keo"]
+        hinh_thuc_don_hang = st.selectbox("Hình thức đơn hàng", hinh_thuc_don_hang_list, index=hinh_thuc_don_hang_list.index("Vật tư"))
 
+    with col2:
+        hinh_thuc_thanh_toan_list = ["Thanh toán trước", "Thanh toán khi nhận hàng"]
+        hinh_thuc_thanh_toan = st.selectbox("Hình thức thanh toán", hinh_thuc_thanh_toan_list)
 
+    with col3:
+        tinh_trang_chot_list = ["Chưa cọc", "Đã cọc"]
+        tinh_trang_chot = st.selectbox("Tình trạng cọc", tinh_trang_chot_list)
+
+    st.write("")
     if st.button("Thêm sản phẩm"):
         st.session_state.order_items.append({
             'product_id': '',
@@ -289,6 +300,7 @@ else:
     if len(st.session_state.order_items) == 0:
         st.warning("Đơn hàng trống. Vui lòng thêm sản phẩm.")
 
+    st.write("---")
 
     # Tính tổng tiền đơn hàng        
     total_amount = order_items_df['subtotal'].sum() if len(order_items_df) > 0 else 0
@@ -305,10 +317,27 @@ else:
         phi_cong_tho = st.number_input("Phí công thợ", min_value=0, value=0, step=100000, format="%d")
         phu_thu = st.number_input("Phụ thu", min_value=0, value=0, step=100000, format="%d")
     
-    ghi_chu_don_hang = st.text_input("Ghi chú")
-    dia_chi_don_hang = st.text_input("Địa chỉ đơn hàng (nếu có)")
+    
+    col3, col4 = st.columns(2)
+    
+    with col3:
+        thoi_gian_thuc_hien_don_hang = st.date_input("Thời gian yêu cầu thực hiện đơn hàng", format="DD/MM/YYYY", value="today")  
+        # Chuyển đổi thành đối tượng datetime với thời gian mặc định là 00:00:00
+        thoi_gian_datetime = datetime.datetime.combine(thoi_gian_thuc_hien_don_hang, datetime.time.min)
+        # Chuyển đổi thành timestamp
+        thoi_gian_thuc_hien_don_hang_timestamp = int(thoi_gian_datetime.timestamp())
+        # Chuyển đổi thành chuỗi dạng "dd/mm/yyyy"
+        thoi_gian_dd_mm_yyyy = thoi_gian_thuc_hien_don_hang.strftime("%d/%m/%Y")
+    with col4:
+        so_luong_m2_yeu_cau_giu = st.text_input("Số m2 yêu cầu giữ & Yêu cầu khác từ khách", placeholder="Nhập dạng số vd: 26")
+    
+    uploaded_files = st.file_uploader("Upload SƠ ĐỒ NHÀ KHÁCH & hình ảnh mặt bằng (nếu đơn hoàn thiện)", accept_multiple_files=True)
 
+    dia_chi_don_hang = st.text_input("Địa chỉ đơn hàng")
+    ghi_chu_don_hang = st.text_area("Ghi chú", placeholder="Yêu cầu thêm của khách hàng, ghi chú,.... nhập vào đây!")
+    
 
+    
 
 
     # Thêm nút "Lưu đơn hàng"
@@ -336,6 +365,19 @@ else:
         customer_phone = unidecode.unidecode(customer_phone)
         customer_ad_channel = unidecode.unidecode(customer_ad_channel)
         
+        
+        # Mã hóa các file về base64 và lưu vào mảng
+        uploaded_files_data = []
+        for uploaded_file in uploaded_files:
+            file_content = uploaded_file.read() #đọc convert qua binary
+            file_size = uploaded_file.size
+            file_base64 = base64.b64encode(file_content).decode('utf-8')
+            uploaded_files_data.append({
+                'file_name': uploaded_file.name,
+                'file_size': file_size,
+                'file_binary_content': file_base64
+            })
+                
         # Tạo payload để gửi đi
         payload = {
             'order': {
@@ -352,19 +394,27 @@ else:
                 'Phí vận chuyển': phi_van_chuyen,
                 'Phí công thợ': phi_cong_tho,
                 'Hình thức đơn hàng': hinh_thuc_don_hang,
-                'Địa chỉ': dia_chi_don_hang
+                'Địa chỉ': dia_chi_don_hang,
+                'so_luong_m2_yeu_cau_giu': so_luong_m2_yeu_cau_giu,
+                'thoi_gian_thuc_hien_don_hang_timestamp': thoi_gian_thuc_hien_don_hang_timestamp,
+                'thoi_gian_thuc_hien_don_hang_date': thoi_gian_dd_mm_yyyy,
+                'hinh_thuc_thanh_toan': hinh_thuc_thanh_toan,
+                'tinh_trang_chot': tinh_trang_chot,
+                'attachments': uploaded_files_data
             },
             'order_items': order_items,
             'flow_key': str(uuid.uuid4())  # Tạo flow_key duy nhất
-
         }
         
         # URL của API endpoint
         url = 'https://open-sg.larksuite.com/anycross/trigger/callback/MDkxMzQxNDMwOGE0ZGJlNDcyNGIyMGI0NWYwZTYwNDA1'
         
+        
+        # st.write(payload)
+        
         # Gửi yêu cầu POST đến API endpoint với xác thực HTTP Basic Auth (nếu cần)
         response = requests.post(url, json=payload, auth=HTTPBasicAuth(user, password))
-        st.info("Đang xử lý...")
+        # st.write(response)
         
         
         # Lấy mã trạng thái (status code) của phản hồi
