@@ -44,7 +44,7 @@ else:
     table_orders_id = st.secrets["table_orders_id"]
     table_product_id = st.secrets["table_product_id"]
     # Tiêu đề app
-    st.info("Khâu này kết nối lấy data có thể hơi lâu do thông tin khách hàng nhiều quá, có thể xem xét chỉ lấy khách hàng đã tạo trong 30 ngày qua!")
+    st.info("Khâu này kết nối lấy data có thể hơi lâu do thông tin khách hàng nhiều quá, có thể xem xét chỉ lấy khách hàng đã chốt trong 30 ngày qua!")
     if 'tenant_access_token' not in st.session_state:
         st.session_state.tenant_access_token = None
 
@@ -69,6 +69,7 @@ else:
         dfs = {}
         
         for table_id, table_name in zip(table_ids, table_names):
+            st.info("Đang lấy dữ liệu từ: "+table_name)
             if table_name == "table_customer":
                 #chỉ lấy ra khách hàng nào đã chốt thôi
                 filter = {
@@ -111,8 +112,6 @@ else:
 
     # Tạo danh sách Nguồn khách hàng
     
-    
-    # customer_source_list = list(filter(bool, set([customer['fields'].get('Nguồn khách hàng', '') for customer in customer_data])))
     customer_source_list = list(set([customer['fields'].get('Nguồn khách hàng', '') for customer in customer_data if customer['fields'].get('Nguồn khách hàng', '')]))
 
 
@@ -120,7 +119,6 @@ else:
     # Sắp xếp danh sách khách hàng theo ngày tạo (mới nhất lên trên)
     sorted_customer_data = sorted(customer_data, key=lambda x: x['fields'].get('Thời gian tạo', 0), reverse=True)
     # Tạo danh sách khách hàng để hiển thị trong dropdown
-    # customer_list = [customer['fields']['ID khách hàng'][0]['text'] for customer in sorted_customer_data]
     customer_list = [customer['fields'].get('ID khách hàng', {'value': [{'text': ''}]})['value'][0]['text'] for customer in sorted_customer_data]
 
     # Form nhập thông tin khách hàng
@@ -175,13 +173,6 @@ else:
             (customer for customer in customer_data if customer['fields'].get('ID khách hàng', {'value': [{'text': ''}]})['value'][0]['text'] == selected_customer),
             None
         )        
-        
-        # customer_name = selected_customer_data['fields']['ID khách hàng'][0]['text'].split(' - ')[0]
-        # customer_phone = selected_customer_data['fields']['ID khách hàng'][0]['text'].split(' - ')[1]
-        # customer_email = selected_customer_data['fields'].get('Email', "")
-        # customer_ad_channel = selected_customer_data['fields'].get('Nguồn khách hàng', "")
-        # customer_notes = selected_customer_data['fields'].get('Ghi chú', "")
-        # customer_record_id = selected_customer_data['record_id']
         
         customer_id_value = selected_customer_data['fields'].get('ID khách hàng', {'value': [{'text': ''}]})['value'][0]['text']
         customer_name = customer_id_value.split(' - ')[0] if ' - ' in customer_id_value else ''
