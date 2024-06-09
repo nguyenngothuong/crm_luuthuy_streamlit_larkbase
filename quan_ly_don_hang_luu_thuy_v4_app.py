@@ -56,8 +56,8 @@ else:
         else:
             st.error("Không thể tạo tenant_access_token. Vui lòng kiểm tra lại App ID và App Secret.")
 
-    def get_larkbase_table_data(table_id):
-        return get_larkbase_data(st.session_state.tenant_access_token, lark_app_token, table_id, app_id=lark_app_id, app_secret=lark_app_secret)
+    def get_larkbase_table_data(table_id, filter=None):
+        return get_larkbase_data(st.session_state.tenant_access_token, lark_app_token, table_id, filter = filter,  app_id=lark_app_id, app_secret=lark_app_secret)
 
     def save_df_to_json(df, file_name):
         with open(file_name, "w", encoding="utf-8") as file:
@@ -69,7 +69,27 @@ else:
         dfs = {}
         
         for table_id, table_name in zip(table_ids, table_names):
-            data = get_larkbase_table_data(table_id)
+            if table_name == "table_customer":
+                #chỉ lấy ra khách hàng nào đã chốt thôi
+                filter = {
+                    "filter": {
+                        "conditions": [
+                            {
+                                "field_name": "Tình trạng",
+                                "operator": "is",
+                                "value": [
+                                    "Chốt"
+                                ]
+                            }
+                        ],
+                        "conjunction": "and"
+                    }
+                }
+                
+                data = get_larkbase_table_data(table_id,filter)
+            else:
+                data = get_larkbase_table_data(table_id)
+                
             if data is not None:
                 dfs[table_name] = pd.DataFrame(data)
                 # save_df_to_json(dfs[table_name], f"{table_name}.json")  # Lưu DataFrame vào file JSON
@@ -89,18 +109,19 @@ else:
     product_data = dfs["table_product"].to_dict('records')
 
 
-
     # Tạo danh sách Nguồn khách hàng
-    customer_source_list = list(filter(bool, set([customer['fields'].get('Nguồn khách hàng', '') for customer in customer_data])))
+    
+    
+    # customer_source_list = list(filter(bool, set([customer['fields'].get('Nguồn khách hàng', '') for customer in customer_data])))
+    customer_source_list = list(set([customer['fields'].get('Nguồn khách hàng', '') for customer in customer_data if customer['fields'].get('Nguồn khách hàng', '')]))
 
 
 
     # Sắp xếp danh sách khách hàng theo ngày tạo (mới nhất lên trên)
     sorted_customer_data = sorted(customer_data, key=lambda x: x['fields'].get('Thời gian tạo', 0), reverse=True)
     # Tạo danh sách khách hàng để hiển thị trong dropdown
-    customer_list = [customer['fields']['ID khách hàng'][0]['text'] for customer in sorted_customer_data]
-
-
+    # customer_list = [customer['fields']['ID khách hàng'][0]['text'] for customer in sorted_customer_data]
+    customer_list = [customer['fields'].get('ID khách hàng', {'value': [{'text': ''}]})['value'][0]['text'] for customer in sorted_customer_data]
 
     # Form nhập thông tin khách hàng
     st.header("Thông tin khách hàng")
@@ -143,17 +164,34 @@ else:
                 
     else:
         # Chọn khách hàng từ danh sách
+        st.info("Dưới đây là danh sách khách hàng đã chốt!")
         selected_customer = st.selectbox("Chọn khách hàng", customer_list)
         is_new = "no"
         
         # Lấy thông tin khách hàng đã chọn
-        selected_customer_data = next(customer for customer in customer_data if customer['fields']['ID khách hàng'][0]['text'] == selected_customer)
-        customer_name = selected_customer_data['fields']['ID khách hàng'][0]['text'].split(' - ')[0]
-        customer_phone = selected_customer_data['fields']['ID khách hàng'][0]['text'].split(' - ')[1]
-        customer_email = selected_customer_data['fields'].get('Email', "")
-        customer_ad_channel = selected_customer_data['fields'].get('Nguồn khách hàng', "")
-        customer_notes = selected_customer_data['fields'].get('Ghi chú', "")
-        customer_record_id = selected_customer_data['record_id']
+        # selected_customer_data = next(customer for customer in customer_data if customer['fields']['ID khách hàng'][0]['text'] == selected_customer)
+        
+        selected_customer_data = next(
+            (customer for customer in customer_data if customer['fields'].get('ID khách hàng', {'value': [{'text': ''}]})['value'][0]['text'] == selected_customer),
+            None
+        )        
+        
+        # customer_name = selected_customer_data['fields']['ID khách hàng'][0]['text'].split(' - ')[0]
+        # customer_phone = selected_customer_data['fields']['ID khách hàng'][0]['text'].split(' - ')[1]
+        # customer_email = selected_customer_data['fields'].get('Email', "")
+        # customer_ad_channel = selected_customer_data['fields'].get('Nguồn khách hàng', "")
+        # customer_notes = selected_customer_data['fields'].get('Ghi chú', "")
+        # customer_record_id = selected_customer_data['record_id']
+        
+        customer_id_value = selected_customer_data['fields'].get('ID khách hàng', {'value': [{'text': ''}]})['value'][0]['text']
+        customer_name = customer_id_value.split(' - ')[0] if ' - ' in customer_id_value else ''
+        customer_phone = customer_id_value.split(' - ')[1] if ' - ' in customer_id_value and len(customer_id_value.split(' - ')) > 1 else ''
+        customer_email = selected_customer_data['fields'].get('Email', [{'text': ''}])[0]['text']
+        customer_ad_channel = selected_customer_data['fields'].get('Nguồn khách hàng', '')
+        customer_notes = selected_customer_data['fields'].get('Ghi chú', [{'text': ''}])[0]['text']
+        customer_record_id = selected_customer_data.get('record_id', '')
+        
+        
     # Hiển thị thông tin khách hàng đã chọn hoặc nhập
     st.subheader("Thông tin khách hàng")
     st.write(f"Tên khách hàng: {customer_name}")
