@@ -294,11 +294,17 @@ else:
     total_amount = order_items_df['subtotal'].sum() if len(order_items_df) > 0 else 0
     st.subheader(f"Tổng tiền: {total_amount:,} VNĐ")
 
-    # Nhập tiền cọc
-    tien_coc = st.number_input("Tiền cọc", min_value=0, value=0, step=100000, format="%d")
-    phi_cong_tho = st.number_input("Phí công thợ", min_value=0, value=0, step=100000, format="%d")
-    phi_van_chuyen = st.number_input("Phí vận chuyển", min_value=0, value=0, step=10000, format="%d")
-    phu_thu = st.number_input("Phụ thu", min_value=0, value=0, step=100000, format="%d")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        tien_coc = st.number_input("Tiền cọc", min_value=0, value=0, step=100000, format="%d")
+        phi_van_chuyen = st.number_input("Phí vận chuyển", min_value=0, value=0, step=10000, format="%d")
+
+    with col2:
+        phi_cong_tho = st.number_input("Phí công thợ", min_value=0, value=0, step=100000, format="%d")
+        phu_thu = st.number_input("Phụ thu", min_value=0, value=0, step=100000, format="%d")
+    
     ghi_chu_don_hang = st.text_input("Ghi chú")
     dia_chi_don_hang = st.text_input("Địa chỉ đơn hàng (nếu có)")
 
