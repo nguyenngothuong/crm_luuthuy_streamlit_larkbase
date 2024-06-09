@@ -31,7 +31,9 @@ if not st.session_state.logged_in:
         else:
             st.error("Sai tài khoản mật khẩu")
 else:
-
+    st.info("Cập nhật: 10/06/2024.")
+    st.write("1. Thêm form giống như form ở larkbase")
+    st.write("2. Chỉ hiển thị ra danh sách khách hàng đã 'chốt'")
     user = st.secrets["user"]
     password = st.secrets["password"]
 
