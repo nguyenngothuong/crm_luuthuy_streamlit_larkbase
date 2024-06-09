@@ -34,6 +34,8 @@ else:
     st.info("Cập nhật: 10/06/2024.")
     st.write("1. Thêm form giống như form ở larkbase")
     st.write("2. Chỉ hiển thị ra danh sách khách hàng đã 'chốt'")
+    st.write("---")
+    
     user = st.secrets["user"]
     password = st.secrets["password"]
 
