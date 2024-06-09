@@ -325,13 +325,19 @@ else:
     col3, col4 = st.columns(2)
     
     with col3:
-        thoi_gian_thuc_hien_don_hang = st.date_input("Thời gian yêu cầu thực hiện đơn hàng", format="DD/MM/YYYY", value="today")  
-        # Chuyển đổi thành đối tượng datetime với thời gian mặc định là 00:00:00
-        thoi_gian_datetime = datetime.datetime.combine(thoi_gian_thuc_hien_don_hang, datetime.time.min)
-        # Chuyển đổi thành timestamp
-        thoi_gian_thuc_hien_don_hang_timestamp = int(thoi_gian_datetime.timestamp())
-        # Chuyển đổi thành chuỗi dạng "dd/mm/yyyy"
-        thoi_gian_dd_mm_yyyy = thoi_gian_thuc_hien_don_hang.strftime("%d/%m/%Y")
+        thoi_gian_thuc_hien_don_hang = st.date_input("Thời gian yêu cầu thực hiện đơn hàng", format="DD/MM/YYYY", value=None)  
+        if thoi_gian_thuc_hien_don_hang:
+            # Chuyển đổi thành đối tượng datetime với thời gian mặc định là 00:00:00
+            thoi_gian_datetime = datetime.datetime.combine(st.session_state.thoi_gian_thuc_hien_don_hang, datetime.time.min)
+            # Chuyển đổi thành timestamp
+            thoi_gian_thuc_hien_don_hang_timestamp = int(thoi_gian_datetime.timestamp())
+            # Chuyển đổi thành chuỗi dạng "dd/mm/yyyy"
+            thoi_gian_dd_mm_yyyy = st.session_state.thoi_gian_thuc_hien_don_hang.strftime("%d/%m/%Y")
+        else:
+            thoi_gian_thuc_hien_don_hang_timestamp = None
+            thoi_gian_dd_mm_yyyy = None   
+
+
     with col4:
         so_luong_m2_yeu_cau_giu = st.text_input("Số m2 yêu cầu giữ & Yêu cầu khác từ khách", placeholder="Nhập dạng số vd: 26")
     
@@ -381,7 +387,11 @@ else:
                 'file_size': file_size,
                 'file_binary_content': file_base64
             })
-                
+              
+              
+
+            
+                 
         # Tạo payload để gửi đi
         payload = {
             'order': {
