@@ -325,8 +325,8 @@ else:
     col3, col4 = st.columns(2)
     
     with col3:
-        thoi_gian_thuc_hien_don_hang = st.date_input("Thời gian yêu cầu thực hiện đơn hàng", format="DD/MM/YYYY", value=None)  
-        if thoi_gian_thuc_hien_don_hang:
+        st.session_state.thoi_gian_thuc_hien_don_hang = st.date_input("Thời gian yêu cầu thực hiện đơn hàng", format="DD/MM/YYYY", value=None)  
+        if st.session_state.thoi_gian_thuc_hien_don_hang:
             # Chuyển đổi thành đối tượng datetime với thời gian mặc định là 00:00:00
             thoi_gian_datetime = datetime.datetime.combine(st.session_state.thoi_gian_thuc_hien_don_hang, datetime.time.min)
             # Chuyển đổi thành timestamp
