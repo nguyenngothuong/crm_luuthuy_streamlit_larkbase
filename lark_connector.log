@@ -52,3 +52,4 @@
 2024-06-08 02:44:27 - INFO - New record created successfully with ID: recuf2JxTDuL1P
 2024-06-09 22:40:29 - INFO - Dữ liệu trả về: {'code': 1254018, 'msg': 'InvalidFilter', 'error': {'message': "Invalid request parameter: ''. Correct format : conjunction  is invalid. Please check and modify accordingly.", 'log_id': '202406091540262DD863F464B142DBFF31'}}
 2024-06-12 17:41:48 - ERROR - Error: <Response [500]>
+2024-06-16 01:00:41 - ERROR - Error: <Response [500]>
