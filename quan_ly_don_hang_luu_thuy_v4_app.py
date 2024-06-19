@@ -46,7 +46,14 @@ def login():
             st.write("2. Thêm video hướng dẫn")
             st.write("3. Thêm tính năng login nhiều user - ghi lại user khi gửi dữ liệu.")
             st.write("---")
-        
+            st.info("Cập nhật: 16/06/2024.")
+            st.write("1. Fix bug: không thể kết nối đến dữ liệu (lỗi hết hạn token)")
+            st.write("2. Thêm tính năng login nhiều user - ghi lại user khi gửi dữ liệu. (tk mk cần thì gửi thượng để thượng cài)")
+            st.write("---")
+        with st.popover("Xem kế hoạch cập nhật."):
+            st.write("1. Thêm thanh navibar cho dễ theo dõi tab")
+            st.write("2. Update tính năng login tự động check tkmk")
+            
         user = st.secrets["user"]
         password = st.secrets["password"]
 
@@ -58,6 +65,9 @@ def login():
         table_order_id = st.secrets["table_order_id"]
         table_orders_id = st.secrets["table_orders_id"]
         table_product_id = st.secrets["table_product_id"]
+        
+        st.session_state.tenant_access_token = get_tenant_access_token(lark_app_id, lark_app_secret)
+        
         # Tiêu đề app
         if 'tenant_access_token' not in st.session_state:
             st.session_state.tenant_access_token = None
