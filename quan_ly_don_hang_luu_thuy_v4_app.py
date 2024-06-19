@@ -46,7 +46,7 @@ def login():
             st.write("2. Thêm video hướng dẫn - sắp ra mắt")
             st.write("3. Thêm tính năng login nhiều user - ghi lại user khi gửi dữ liệu.")
             st.write("---")
-            st.info("Cập nhật: 16/06/2024.")
+            st.info("Cập nhật: 19/06/2024.")
             st.write("1. Fix bug: không thể kết nối đến dữ liệu (lỗi hết hạn token)")
             st.write("2. Thêm tính năng login nhiều user - ghi lại user khi gửi dữ liệu. (tk mk cần thì gửi thượng để thượng cài)")
             st.write("---")
