@@ -66,11 +66,12 @@ def login():
         table_orders_id = st.secrets["table_orders_id"]
         table_product_id = st.secrets["table_product_id"]
         
-        st.session_state.tenant_access_token = get_tenant_access_token(lark_app_id, lark_app_secret)
         
         # Tiêu đề app
         if 'tenant_access_token' not in st.session_state:
             st.session_state.tenant_access_token = None
+            
+        st.session_state.tenant_access_token = get_tenant_access_token(lark_app_id, lark_app_secret)
 
         if st.session_state.tenant_access_token is None:
             st.session_state.tenant_access_token = get_tenant_access_token(lark_app_id, lark_app_secret)
