@@ -11,10 +11,9 @@ from requests.auth import HTTPBasicAuth
 import base64
 import os
 
-# Tiêu đề app
-st.title("Ứng dụng quản lý đơn hàng")
 
-def login():
+
+def login():    
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False
         st.session_state.username = ''
@@ -65,13 +64,14 @@ def login():
         table_order_id = st.secrets["table_order_id"]
         table_orders_id = st.secrets["table_orders_id"]
         table_product_id = st.secrets["table_product_id"]
+        st.session_state.tenant_access_token = get_tenant_access_token(lark_app_id, lark_app_secret)
         
         
         # Tiêu đề app
         if 'tenant_access_token' not in st.session_state:
             st.session_state.tenant_access_token = None
             
-        st.session_state.tenant_access_token = get_tenant_access_token(lark_app_id, lark_app_secret)
+        # st.session_state.tenant_access_token = get_tenant_access_token(lark_app_id, lark_app_secret)
 
         if st.session_state.tenant_access_token is None:
             st.session_state.tenant_access_token = get_tenant_access_token(lark_app_id, lark_app_secret)
@@ -261,9 +261,8 @@ def login():
                 'note': '',
                 'subtotal': 0
             })
-
+        product_ids = sorted(list(set(product['fields']['Mã vật tư'] for product in product_data if product['fields'].get('Mã vật tư'))))
         order_items_df = pd.DataFrame(st.session_state.order_items)
-
         for index, order_item in order_items_df.iterrows():
             col1, col2, col3, col4, col5, col6, col7, col8, col9 = st.columns([0.5, 3, 1, 2, 1, 1, 1, 2, 2])
             
@@ -271,7 +270,9 @@ def login():
                 st.write(f"#{index + 1}")
             
             with col2:
-                product_id = st.selectbox("Mã vật tư", [''] + [product['fields']['Mã vật tư'] for product in product_data], key=f'product_{index}')
+                
+                product_id = st.selectbox("Mã vật tư", [''] + product_ids, key=f'product_{index}')
+                # product_id = st.selectbox("Mã vật tư", [''] + [product['fields']['Mã vật tư'] for product in product_data], key=f'product_{index}')
                 if product_id != '':
                     product = next(product for product in product_data if product['fields']['Mã vật tư'] == product_id)
                     order_items_df.at[index, 'product_id'] = product_id
