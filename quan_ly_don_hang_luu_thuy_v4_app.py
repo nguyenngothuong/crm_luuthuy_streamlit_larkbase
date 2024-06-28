@@ -474,13 +474,13 @@ def login():
             }
             
             # URL của API endpoint
-            url = 'https://open-sg.larksuite.com/anycross/trigger/callback/MDkxMzQxNDMwOGE0ZGJlNDcyNGIyMGI0NWYwZTYwNDA1'
-            
-            
-            # st.write(payload)
+            url = st.secrets["webhook"]["url"]
             
             # Gửi yêu cầu POST đến API endpoint với xác thực HTTP Basic Auth (nếu cần)
+            user = st.secrets["webhook"]["user"]
+            password = st.secrets["webhook"]["password"]
             response = requests.post(url, json=payload, auth=HTTPBasicAuth(user, password))
+            
             # st.write(response)
             
             
