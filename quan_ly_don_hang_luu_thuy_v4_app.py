@@ -144,8 +144,27 @@ def login():
         # Sắp xếp danh sách khách hàng theo ngày tạo (mới nhất lên trên)
         sorted_customer_data = sorted(customer_data, key=lambda x: x['fields'].get('Thời gian tạo', 0), reverse=True)
         # Tạo danh sách khách hàng để hiển thị trong dropdown
-        customer_list = [customer['fields'].get('ID khách hàng', {'value': [{'text': ''}]})['value'][0]['text'] for customer in sorted_customer_data]
-
+        # customer_list = [customer['fields'].get('ID khách hàng', {'value': [{'text': ''}]})['value'][0]['text'] for customer in sorted_customer_data]
+        # st.write(customer_list)
+        
+        # Modify the customer_list creation
+        customer_list = []
+        for customer in sorted_customer_data:
+            customer_id = customer['fields'].get('ID khách hàng', {'value': [{'text': ''}]})['value'][0]['text']
+            parts = customer_id.split('-')
+            if len(parts) >= 2:
+                name = parts[0].strip()
+                phone = parts[-1].strip()
+                if len(phone) >= 6:
+                    masked_phone = f"{phone[:3]}{'*' * (len(phone) - 6)}{phone[-3:]}"
+                else:
+                    masked_phone = '*' * len(phone)
+                customer_list.append(f"{name} - {masked_phone}")
+            else:
+                customer_list.append(customer_id)
+                
+                
+        
         # Form nhập thông tin khách hàng
         st.header("Thông tin khách hàng")
 
@@ -192,28 +211,37 @@ def login():
             is_new = "no"
             
             # Lấy thông tin khách hàng đã chọn
-            # selected_customer_data = next(customer for customer in customer_data if customer['fields']['ID khách hàng'][0]['text'] == selected_customer)
-            
+            selected_customer_name = selected_customer.split(' - ')[0].strip()
             selected_customer_data = next(
-                (customer for customer in customer_data if customer['fields'].get('ID khách hàng', {'value': [{'text': ''}]})['value'][0]['text'] == selected_customer),
+                (customer for customer in customer_data 
+                if customer['fields'].get('ID khách hàng', {'value': [{'text': ''}]})['value'][0]['text'].split('-')[0].strip() == selected_customer_name),
                 None
-            )        
+            )
+
+            if selected_customer_data:
+                customer_id_value = selected_customer_data['fields'].get('ID khách hàng', {'value': [{'text': ''}]})['value'][0]['text']
+                parts = customer_id_value.split('-')
+                customer_name = parts[0].strip()
+                customer_phone = parts[-1].strip() if len(parts) > 1 else ''
+                customer_email = selected_customer_data['fields'].get('Email', [{'text': ''}])[0]['text']
+                customer_ad_channel = selected_customer_data['fields'].get('Nguồn khách hàng', '')
+                customer_notes = selected_customer_data['fields'].get('Ghi chú', [{'text': ''}])[0]['text']
+                customer_record_id = selected_customer_data.get('record_id', '')
+
+                # Ẩn số điện thoại
+                if len(customer_phone) >= 6:
+                    masked_phone = f"{customer_phone[:3]}{'*' * (len(customer_phone) - 6)}{customer_phone[-3:]}"
+                else:
+                    masked_phone = '*' * len(customer_phone)
+
+                # Hiển thị thông tin khách hàng đã chọn
+                st.subheader("Thông tin khách hàng")
+                st.write(f"Tên khách hàng: {customer_name}")
+                st.write(f"Số điện thoại: {masked_phone}")
+                st.write(f"Nguồn khách hàng: {customer_ad_channel}")
+                st.write(f"Ghi chú: {customer_notes}")
+                    
             
-            customer_id_value = selected_customer_data['fields'].get('ID khách hàng', {'value': [{'text': ''}]})['value'][0]['text']
-            customer_name = customer_id_value.split(' - ')[0] if ' - ' in customer_id_value else ''
-            customer_phone = customer_id_value.split(' - ')[1] if ' - ' in customer_id_value and len(customer_id_value.split(' - ')) > 1 else ''
-            customer_email = selected_customer_data['fields'].get('Email', [{'text': ''}])[0]['text']
-            customer_ad_channel = selected_customer_data['fields'].get('Nguồn khách hàng', '')
-            customer_notes = selected_customer_data['fields'].get('Ghi chú', [{'text': ''}])[0]['text']
-            customer_record_id = selected_customer_data.get('record_id', '')
-            
-            
-        # Hiển thị thông tin khách hàng đã chọn hoặc nhập
-        st.subheader("Thông tin khách hàng")
-        st.write(f"Tên khách hàng: {customer_name}")
-        st.write(f"Số điện thoại: {customer_phone}")
-        st.write(f"Nguồn khách hàng: {customer_ad_channel}")
-        st.write(f"Ghi chú: {customer_notes}")
 
 
 
@@ -270,13 +298,12 @@ def login():
                 st.write(f"#{index + 1}")
             
             with col2:
-                
                 product_id = st.selectbox("Mã vật tư", [''] + product_ids, key=f'product_{index}')
-                # product_id = st.selectbox("Mã vật tư", [''] + [product['fields']['Mã vật tư'] for product in product_data], key=f'product_{index}')
                 if product_id != '':
-                    product = next(product for product in product_data if product['fields']['Mã vật tư'] == product_id)
+                    product = next((p for p in product_data if p['fields']['Mã vật tư'] == product_id), None)
                     order_items_df.at[index, 'product_id'] = product_id
                 else:
+                    product = None
                     order_items_df.at[index, 'product_id'] = ''
             
             with col3:
@@ -284,22 +311,22 @@ def login():
                 order_items_df.at[index, 'quantity'] = quantity
             
             with col4:
-                default_price = product['fields']['Đơn giá'] if product_id != '' else 0
+                default_price = product['fields'].get('Đơn giá', 0) if product else 0
                 price = st.number_input("Đơn giá", value=float(default_price), key=f'price_{index}', format="%.0f")
                 order_items_df.at[index, 'price'] = price
                 
             with col5:
-                unit = product['fields']['Đơn vị tính (khi lên đơn)'] if product_id != '' else ''
+                unit = product['fields'].get('Đơn vị tính (khi lên đơn)', '') if product else ''
                 st.write(f"ĐVT: {unit}")
                 order_items_df.at[index, 'unit'] = unit
             
             with col6:
-                category = product['fields']['Nhóm'] if product_id != '' else ''
+                category = product['fields'].get('Nhóm', '') if product else ''
                 st.write(f"Nhóm: {category}")
                 order_items_df.at[index, 'category'] = category
             
             with col7:
-                product_type = product['fields']['Loại'] if product_id != '' else ''
+                product_type = product['fields'].get('Loại', '') if product else ''
                 st.write(f"Loại: {product_type}")
                 order_items_df.at[index, 'type'] = product_type
             
@@ -311,6 +338,8 @@ def login():
                 subtotal = quantity * price
                 order_items_df.at[index, 'subtotal'] = subtotal
                 st.write(f"Thành tiền: {subtotal:,.0f} VNĐ")
+
+
 
         st.session_state.order_items = order_items_df.to_dict('records')
 
